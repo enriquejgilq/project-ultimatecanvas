@@ -1,0 +1,6 @@
+{
+  "!(**/(dist|node_modules|storybook-static|coverage)/**)*.{ts,tsx,js,jsx}": ["eslint --fix"],
+  "!(**/(dist|node_modules|storybook-static|coverage)/**)*.{ts,tsx,js,jsx,json,md,yml,yaml}": [
+    "prettier --write"
+  ]
+}

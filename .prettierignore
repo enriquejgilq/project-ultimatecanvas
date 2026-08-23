@@ -1,0 +1,9 @@
+dist
+dist-node
+build
+storybook-static
+coverage
+.turbo
+node_modules
+pnpm-lock.yaml
+.claude

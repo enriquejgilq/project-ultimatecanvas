@@ -1,0 +1,12 @@
+{
+  "extends": "@ucanvas/tsconfig/react.json",
+  "compilerOptions": {
+    "composite": true,
+    "noEmit": false,
+    "emitDeclarationOnly": true,
+    "outDir": "./dist",
+    "tsBuildInfoFile": "./dist/tsconfig.app.tsbuildinfo",
+    "baseUrl": "."
+  },
+  "include": ["src"]
+}

@@ -1,0 +1,14 @@
+{
+  "extends": "@ucanvas/tsconfig/base.json",
+  "compilerOptions": {
+    "composite": true,
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "outDir": "./dist-node",
+    "tsBuildInfoFile": "./dist-node/tsconfig.node.tsbuildinfo",
+    "lib": ["ES2022"],
+    "noUnusedLocals": false,
+    "noUnusedParameters": false
+  },
+  "include": ["vite.config.ts"]
+}

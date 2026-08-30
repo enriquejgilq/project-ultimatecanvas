@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { Health } from '@ucanvas/shared';
-import { apiClient, ApiError } from '../../../lib/api-client';
+import { ApiError } from '@/lib/apiClient';
+import { healthService } from '../services/health.service';
 
 interface UseHealthResult {
   health: Health | null;
@@ -16,8 +17,8 @@ export function useHealth(): UseHealthResult {
   useEffect(() => {
     let cancelled = false;
 
-    apiClient
-      .get<Health>('/health')
+    healthService
+      .check()
       .then((result) => {
         if (!cancelled) setHealth(result);
       })

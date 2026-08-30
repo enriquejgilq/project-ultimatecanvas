@@ -12,6 +12,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@tanstack/react-query": "^5.102.8",
     "@ucanvas/shared": "workspace:*",
     "@ucanvas/ui": "workspace:*",
     "react": "^18.3.1",

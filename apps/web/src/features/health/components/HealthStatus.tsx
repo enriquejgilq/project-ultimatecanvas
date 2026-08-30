@@ -1,4 +1,4 @@
-import { useHealth } from './hooks/useHealth';
+import { useHealth } from '../hooks/useHealth';
 
 export function HealthStatus() {
   const { health, error, loading } = useHealth();

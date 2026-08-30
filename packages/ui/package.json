@@ -9,27 +9,37 @@
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
-    }
+    },
+    "./style.css": "./dist/style.css"
   },
   "scripts": {
-    "build": "tsc -p tsconfig.json",
-    "dev": "tsc -p tsconfig.json --watch",
+    "build": "tsc -p tsconfig.json && tailwindcss -i ./src/styles/index.css -o ./dist/style.css --minify",
+    "dev": "tsc -p tsconfig.json --watch & tailwindcss -i ./src/styles/index.css -o ./dist/style.css --watch",
     "lint": "eslint src",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "echo \"no tests yet\""
+    "test": "echo \"no tests yet\"",
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build"
   },
   "peerDependencies": {
     "react": "^18.3.0",
     "react-dom": "^18.3.0"
   },
   "devDependencies": {
+    "@storybook/react-vite": "^10.5.10",
+    "@tailwindcss/cli": "^4.3.3",
+    "@tailwindcss/vite": "^4.3.3",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
     "@ucanvas/eslint-config": "workspace:*",
     "@ucanvas/tsconfig": "workspace:*",
-    "@types/react": "^18.3.12",
+    "@vitejs/plugin-react": "^4.3.3",
     "eslint": "^9.15.0",
-    "@types/react-dom": "^18.3.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "typescript": "^5.6.3"
+    "storybook": "^10.5.10",
+    "tailwindcss": "^4.3.3",
+    "typescript": "^5.6.3",
+    "vite": "^5.4.11"
   }
 }

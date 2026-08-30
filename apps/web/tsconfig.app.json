@@ -6,7 +6,15 @@
     "emitDeclarationOnly": true,
     "outDir": "./dist",
     "tsBuildInfoFile": "./dist/tsconfig.app.tsbuildinfo",
-    "baseUrl": "."
+    "baseUrl": ".",
+    "paths": {
+      "@/features/*": ["./src/features/*"],
+      "@/hooks/*": ["./src/hooks/*"],
+      "@/lib/*": ["./src/lib/*"],
+      "@/pages/*": ["./src/pages/*"],
+      "@/routes/*": ["./src/routes/*"],
+      "@/utils/*": ["./src/utils/*"]
+    }
   },
   "include": ["src"]
 }

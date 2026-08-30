@@ -60,6 +60,6 @@ componentes visuales se importan como `@ucanvas/ui`.
 
 ## Auth
 
-`routes/ProtectedRoute.tsx` es un placeholder: hoy solo comprueba si existe un
-token en `localStorage`. Reemplazar por el estado de sesión real cuando exista
-la feature de auth (el API ya trae `JwtAuthGuard` listo del lado del backend).
+`routes/ProtectedRoute.tsx` es un no-op por ahora (deja pasar siempre, marcado
+con `TODO(auth)`). Reemplazar por el estado de sesión real cuando exista la
+feature de auth (el API ya trae `JwtAuthGuard` listo del lado del backend).

@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { randomUUID } from 'node:crypto';
 import { User } from '../domain/user.entity';
 import { UsersRepositoryPort } from '../application/ports/users.repository.port';
 
@@ -32,8 +33,22 @@ export class InMemoryUsersRepository implements UsersRepositoryPort {
     this.store.delete(id);
   }
 
-  /** Test helper — populates the store directly. */
+  /** Test/bootstrap helper — populates the store directly. */
   seed(...users: User[]): void {
     users.forEach((user) => this.store.set(user.id, user));
   }
+}
+
+/**
+ * Demo fixtures so the in-memory store isn't empty on a fresh boot — useful to
+ * see the frontend's users table populated without a real database. Wired in
+ * users.module.ts via a factory provider; drop it once Prisma is in place.
+ */
+export function createDemoUsers(): User[] {
+  const now = new Date();
+  return [
+    new User(randomUUID(), 'ada@example.com', 'Ada Lovelace', now, now),
+    new User(randomUUID(), 'grace@example.com', 'Grace Hopper', now, now),
+    new User(randomUUID(), 'alan@example.com', 'Alan Turing', now, now),
+  ];
 }

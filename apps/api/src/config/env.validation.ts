@@ -11,6 +11,8 @@ export const envValidationSchema = Joi.object({
   JWT_REFRESH_SECRET: Joi.string().min(32).required(),
   JWT_REFRESH_EXPIRES_IN: Joi.string().default('7d'),
 
-  // Database placeholder — optional until DatabaseModule is implemented.
-  DATABASE_URL: Joi.string().uri().optional(),
+  // Postgres connection string consumed by PrismaService. Required.
+  DATABASE_URL: Joi.string()
+    .uri({ scheme: [/postgres(ql)?/] })
+    .required(),
 });

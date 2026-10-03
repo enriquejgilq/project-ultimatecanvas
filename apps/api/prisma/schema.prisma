@@ -8,11 +8,129 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  name      String
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  id                String    @id @default(uuid())
+  /// Always stored normalized: trimmed + lowercase.
+  email             String    @unique
+  /// Null for self-registered accounts (registration only asks for email + password).
+  name              String?
+  /// Argon2id hash. Null for accounts created without a password (they cannot log in).
+  passwordHash      String?   @map("password_hash")
+  /// Null = pending verification.
+  emailVerifiedAt   DateTime? @map("email_verified_at")
+  failedLoginCount  Int       @default(0) @map("failed_login_count")
+  lockedUntil       DateTime? @map("locked_until")
+  passwordChangedAt DateTime? @map("password_changed_at")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  sessions       Session[]
+  emailTokens    EmailToken[]
+  securityEvents SecurityEvent[]
 
   @@map("users")
+}
+
+enum SessionRevokedReason {
+  LOGOUT
+  PASSWORD_RESET
+  PASSWORD_CHANGED
+  EXPIRED
+}
+
+model Session {
+  id             String                @id @default(uuid())
+  userId         String                @map("user_id")
+  /// SHA-256 of the opaque cookie token. The raw value is never stored.
+  tokenHash      String                @unique @map("token_hash")
+  rememberMe     Boolean               @map("remember_me")
+  createdAt      DateTime              @default(now()) @map("created_at")
+  lastActivityAt DateTime              @map("last_activity_at")
+  /// createdAt + 30 days when rememberMe; null otherwise (bounded by inactivity).
+  expiresAt      DateTime?             @map("expires_at")
+  revokedAt      DateTime?             @map("revoked_at")
+  revokedReason  SessionRevokedReason? @map("revoked_reason")
+  userAgent      String?               @map("user_agent")
+  ip             String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([userId, revokedAt])
+  @@map("sessions")
+}
+
+enum EmailTokenType {
+  EMAIL_VERIFICATION
+  PASSWORD_RESET
+}
+
+model EmailToken {
+  id            String         @id @default(uuid())
+  userId        String         @map("user_id")
+  type          EmailTokenType
+  /// SHA-256 of the 32-byte link token.
+  tokenHash     String         @unique @map("token_hash")
+  expiresAt     DateTime       @map("expires_at")
+  usedAt        DateTime?      @map("used_at")
+  invalidatedAt DateTime?      @map("invalidated_at")
+  createdAt     DateTime       @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, type])
+  @@map("email_tokens")
+}
+
+enum EmailDispatchKind {
+  EMAIL_VERIFICATION
+  PASSWORD_RESET
+  REGISTRATION_ATTEMPT
+  LOCKOUT_ALERT
+  PASSWORD_CHANGED
+}
+
+/// Send log used for the per-address email rate limit (no FK: also covers addresses without an account).
+model EmailDispatch {
+  id        String            @id @default(uuid())
+  email     String
+  kind      EmailDispatchKind
+  createdAt DateTime          @default(now()) @map("created_at")
+
+  @@index([email, kind, createdAt(sort: Desc)])
+  @@map("email_dispatches")
+}
+
+enum SecurityEventType {
+  REGISTERED
+  REGISTRATION_REPLACED
+  REGISTRATION_ATTEMPT_EXISTING
+  EMAIL_VERIFIED
+  LOGIN_SUCCEEDED
+  LOGIN_FAILED
+  LOGIN_BLOCKED_UNVERIFIED
+  ACCOUNT_LOCKED
+  PASSWORD_RESET_REQUESTED
+  PASSWORD_RESET_COMPLETED
+  PASSWORD_CHANGED
+  PASSWORD_CHANGE_FAILED
+  LOGOUT
+  EMAIL_RATE_LIMITED
+}
+
+/// Never stores passwords, tokens or links.
+model SecurityEvent {
+  id        String            @id @default(uuid())
+  type      SecurityEventType
+  userId    String?           @map("user_id")
+  email     String?
+  ip        String?
+  userAgent String?           @map("user_agent")
+  metadata  Json?
+  createdAt DateTime          @default(now()) @map("created_at")
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([type, createdAt(sort: Desc)])
+  @@map("security_events")
 }

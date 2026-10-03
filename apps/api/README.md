@@ -74,8 +74,47 @@ Comandos (desde `apps/api`, o con `pnpm --filter @ucanvas/api <script>` desde la
 - `pnpm db:migrate` — crea y aplica una migración a partir de `prisma/schema.prisma` (dev).
 - `pnpm db:migrate:deploy` — aplica migraciones pendientes sin generar una nueva (CI/producción).
 - `pnpm db:generate` — regenera el Prisma Client tras cambiar el schema.
-- `pnpm db:seed` — siembra los 3 usuarios de ejemplo (`prisma/seed.ts`, misma data que `createDemoUsers()`).
+- `pnpm db:seed` — siembra los 3 usuarios de ejemplo (`prisma/seed.ts`, misma data que `createDemoUsers()`), verificados y con la contraseña de desarrollo `Demo-canvas-2026` (solo local).
 - `pnpm db:studio` — abre Prisma Studio para inspeccionar la base.
+
+## Autenticación (`modules/auth`)
+
+Spec, plan y contratos en `specs/001-user-auth/`. Resumen de lo que hay que saber para trabajar con el API:
+
+**Modelo de sesión** (research R2)
+
+- `POST /api/v1/auth/login` devuelve un **token de acceso** JWT corto (`JWT_EXPIRES_IN`, 15 min por defecto; payload `{ sub, sid }`) y fija la cookie **`ucanvas_session`** (`HttpOnly`, `SameSite=Strict`, `Path=/api/v1/auth`, `Secure` en producción) con un token opaco cuya huella SHA-256 vive en `sessions`.
+  - Sin "mantener sesión iniciada": cookie de sesión del navegador + cierre tras **2 h sin actividad**.
+  - Con "mantener sesión iniciada": cookie de **30 días** desde el inicio de sesión.
+- `POST /auth/refresh` (cookie + cabecera `X-Requested-With: ucanvas`) emite un token de acceso nuevo.
+- `JwtStrategy` (`modules/auth/infrastructure/jwt.strategy.ts`) comprueba **en cada petición** que la sesión `sid` sigue activa: logout, recuperación y cambio de contraseña cortan el acceso al instante.
+- Contraseñas con **Argon2id**; los enlaces de correo y las sesiones se guardan solo como hash.
+
+**Rutas protegidas por defecto**
+
+`JwtAuthGuard` es global (`APP_GUARD` en `app.module.ts`, después del `ThrottlerGuard`). Todo endpoint exige `Authorization: Bearer <token>` salvo que lleve `@Public()` (`common/decorators/public.decorator.ts`). Para leer el usuario: `@CurrentUser() user: AuthenticatedUser` → `{ userId, sessionId }`.
+
+**Variables de entorno nuevas** (ver `.env.example`)
+
+| Variable         | Uso                                                                                                                                                                                    |
+| ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `APP_WEB_URL`    | Base de los enlaces de los correos (`/verify-email`, `/reset-password`…)                                                                                                               |
+| `MAIL_TRANSPORT` | `console` (dev/test: el correo y su enlace salen en el log del API) o `smtp`. `console` está prohibido con `NODE_ENV=production`                                                       |
+| `SMTP_URL`       | Obligatoria con `smtp`. En local se puede usar Mailpit: `docker run -d -p 1025:1025 -p 8025:8025 axllent/mailpit` → `SMTP_URL=smtp://localhost:1025`, bandeja en http://localhost:8025 |
+| `MAIL_FROM`      | Remitente                                                                                                                                                                              |
+| `TRUST_PROXY`    | `true` detrás de un proxy inverso (nginx del contenedor web) para usar la IP real                                                                                                      |
+
+`JWT_REFRESH_SECRET` y `JWT_REFRESH_EXPIRES_IN` ya no se usan.
+
+**Correos**
+
+Salen por `MailDispatcher`: cola en memoria, sin esperar al SMTP (para que el tiempo de respuesta no delate si un correo existe), con 3 reintentos (1 s, 5 s, 25 s). Cada envío deja una línea de log `{"event":"mail.sent"|"mail.failed","kind","attempts","latencyMs"}` sin destinatario ni enlace. Para medir SC-002 (95 % en menos de 1 minuto) basta con el percentil 95 de `latencyMs` de las líneas `mail.sent`. **Limitación conocida**: los correos pendientes se pierden si el proceso se reinicia (siguiente paso: tabla outbox).
+
+Límite por dirección: 3 correos por hora y tipo (verificación, recuperación, aviso de intento de registro) y 60 s entre dos; por encima no se envía nada y la respuesta HTTP no cambia.
+
+**Tests e2e**
+
+`pnpm --filter @ucanvas/api test:e2e` usa una base **separada**: `DATABASE_URL_TEST`, o la de `.env` con el nombre terminado en `_test` (p. ej. `ultimatecanvas_test`). Se niega a correr contra una base cuyo nombre no termine en `_test`. Créala una vez con `createdb ultimatecanvas_test`; las migraciones se aplican solas al empezar. El throttling se desactiva en e2e (`THROTTLE_DISABLED=true`). El test de enumeración admite `ENUMERATION_MAX_MEDIAN_GAP_MS` (50 ms por defecto) para máquinas de CI lentas.
 
 ## Migrar de in-memory a una base real (plantilla para módulos nuevos)
 
@@ -90,4 +129,5 @@ Cuando un módulo nuevo pase de `InMemory<Dominio>Repository` a Postgres (siguie
 
 - `pnpm --filter @ucanvas/api dev` — levanta la API con watch (`/api/v1/...`, Swagger en `/docs`).
 - `pnpm --filter @ucanvas/api test` — tests unitarios (use cases + entidades de dominio).
+- `pnpm --filter @ucanvas/api test:e2e` — tests e2e contra la base `*_test` (ver Autenticación).
 - `pnpm --filter @ucanvas/api typecheck` / `lint`.

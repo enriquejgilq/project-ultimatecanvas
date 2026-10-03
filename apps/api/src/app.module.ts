@@ -9,6 +9,8 @@ import { TransformInterceptor } from './common/interceptors/transform.intercepto
 import { DatabaseModule } from './database/database.module';
 import { HealthModule } from './modules/health/health.module';
 import { UsersModule } from './modules/users/users.module';
+import { AuthModule } from './modules/auth/auth.module';
+import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 
 @Module({
   imports: [
@@ -18,13 +20,20 @@ import { UsersModule } from './modules/users/users.module';
       validationSchema: envValidationSchema,
       validationOptions: { abortEarly: false },
     }),
-    ThrottlerModule.forRoot([{ ttl: 60_000, limit: 100 }]),
+    ThrottlerModule.forRoot({
+      throttlers: [{ ttl: 60_000, limit: 100 }],
+      // e2e suites fire many requests from 127.0.0.1; they opt out explicitly.
+      skipIf: () => process.env.THROTTLE_DISABLED === 'true',
+    }),
     DatabaseModule,
     HealthModule,
     UsersModule,
+    AuthModule,
   ],
   providers: [
+    // Order matters: throttle first, then require a valid session (routes opt out with @Public()).
     { provide: APP_GUARD, useClass: ThrottlerGuard },
+    { provide: APP_GUARD, useClass: JwtAuthGuard },
     { provide: APP_FILTER, useClass: HttpExceptionFilter },
     { provide: APP_INTERCEPTOR, useClass: TransformInterceptor },
   ],

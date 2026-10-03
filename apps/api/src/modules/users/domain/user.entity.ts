@@ -5,12 +5,13 @@ const EMAIL_PATTERN = /^\S+@\S+\.\S+$/;
 /**
  * Plain domain entity: no NestJS, no Swagger, no ORM.
  * Invariants (valid email, non-empty name) are enforced here, not in the use cases.
+ * `name` is null for accounts created through self-registration (auth module), which only asks for an email.
  */
 export class User {
   constructor(
     public readonly id: string,
     private _email: string,
-    private _name: string,
+    private _name: string | null,
     public readonly createdAt: Date,
     private _updatedAt: Date,
   ) {}
@@ -19,7 +20,7 @@ export class User {
     return this._email;
   }
 
-  get name(): string {
+  get name(): string | null {
     return this._name;
   }
 

@@ -1,0 +1,16 @@
+**/node_modules
+**/dist
+**/dist-node
+**/build
+**/coverage
+**/storybook-static
+**/.turbo
+.git
+**/*.log
+**/.env
+**/.env.*
+!**/.env.example
+.DS_Store
+.claude
+.specify
+specs

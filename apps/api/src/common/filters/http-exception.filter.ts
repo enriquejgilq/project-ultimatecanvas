@@ -7,6 +7,9 @@ import { Response } from 'express';
  */
 interface DomainErrorLike extends Error {
   httpStatus: number;
+  /** Optional machine-readable code (auth module). When present the error body is an object. */
+  code?: string;
+  rules?: string[];
 }
 
 function isDomainError(exception: unknown): exception is DomainErrorLike {
@@ -23,9 +26,11 @@ export class HttpExceptionFilter implements ExceptionFilter {
     const res = host.switchToHttp().getResponse<Response>();
 
     if (isDomainError(exception)) {
-      res
-        .status(exception.httpStatus)
-        .json({ success: false, data: null, error: exception.message });
+      const { code, rules } = exception;
+      const error = code
+        ? { code, message: exception.message, ...(rules ? { rules } : {}) }
+        : exception.message;
+      res.status(exception.httpStatus).json({ success: false, data: null, error });
       return;
     }
 

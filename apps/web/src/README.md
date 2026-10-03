@@ -58,8 +58,32 @@ Otras reglas de import:
 en `vite.config.ts` y `tsconfig.app.json`. No existe `@/components`: los
 componentes visuales se importan como `@ucanvas/ui`.
 
-## Auth
+## Auth (`features/auth`)
 
-`routes/ProtectedRoute.tsx` es un no-op por ahora (deja pasar siempre, marcado
-con `TODO(auth)`). Reemplazar por el estado de sesión real cuando exista la
-feature de auth (el API ya trae `JwtAuthGuard` listo del lado del backend).
+Spec: `specs/001-user-auth/` (contrato web en `contracts/web-routes.md`).
+
+- **Sesión**: `AuthProvider` (envuelve la app en `App.tsx`) expone vía `useAuth()`
+  `status: 'bootstrapping' | 'authenticated' | 'anonymous'`, `user`, `login()`,
+  `logout()` y `renewSession()`. Al arrancar llama a `POST /auth/refresh`: si la
+  cookie de sesión (`HttpOnly`) sigue viva, la sesión se recupera sin pedir credenciales.
+- **Token de acceso solo en memoria** (`lib/authToken.ts`). Nunca en
+  `localStorage`/`sessionStorage`. `apiClient` lo adjunta como `Bearer`, envía
+  `credentials: 'include'` y `X-Requested-With: ucanvas`.
+- **Renovación**: ante un 401 en una petición autenticada, `apiClient` pide un único
+  refresh compartido (aunque fallen varias peticiones a la vez) y reintenta una vez.
+  `useSessionKeepAlive` renueva ~60 s antes de caducar **solo si** hubo interacción
+  (puntero, teclado, rueda, foco) en los últimos 15 min; una pestaña abandonada caduca
+  y el servidor aplica el corte de 2 h de inactividad.
+- **Varias pestañas**: `BroadcastChannel('ucanvas-auth')` propaga `login`, `logout`
+  y `session-ended`.
+- **Rutas privadas**: todo lo que va dentro de `routes/ProtectedRoute.tsx`. Sin
+  sesión redirige a `/login?returnTo=<ruta+query+hash>`; tras iniciar sesión se
+  vuelve allí pasando por `utils/safeReturnTo.ts`, que solo acepta rutas del propio
+  origen (nada de `//otro.sitio`, `https://…`, `/\…`).
+- Los textos (mensajes de error genéricos, reglas de contraseña) salen de
+  `AUTH_MESSAGES` / `PASSWORD_RULE_MESSAGES` en `@ucanvas/shared`, los mismos que usa el API.
+
+## Tests
+
+`pnpm --filter @ucanvas/web test` (Vitest + Testing Library, entorno jsdom). Los tests
+viven junto al código (`*.test.ts[x]`); el setup está fuera de `src/`, en `test/setup.ts`.

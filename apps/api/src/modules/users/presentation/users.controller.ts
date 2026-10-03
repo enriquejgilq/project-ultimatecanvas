@@ -10,7 +10,7 @@ import {
   Patch,
   Post,
 } from '@nestjs/common';
-import { ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { CreateUserUseCase } from '../application/use-cases/create-user.use-case';
 import { DeleteUserUseCase } from '../application/use-cases/delete-user.use-case';
 import { GetUserUseCase } from '../application/use-cases/get-user.use-case';
@@ -21,6 +21,8 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { UserResponseDto } from './dto/user-response.dto';
 
 @ApiTags('users')
+@ApiBearerAuth()
+@ApiResponse({ status: 401, description: 'Missing/expired access token' })
 @Controller('users')
 export class UsersController {
   constructor(

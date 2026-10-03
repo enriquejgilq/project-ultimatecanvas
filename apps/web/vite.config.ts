@@ -1,4 +1,4 @@
-import { defineConfig } from 'vite';
+import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 
 export default defineConfig({
@@ -12,6 +12,12 @@ export default defineConfig({
       '@/routes': '/src/routes',
       '@/utils': '/src/utils',
     },
+  },
+  test: {
+    environment: 'jsdom',
+    setupFiles: ['./test/setup.ts'],
+    globals: true,
+    include: ['src/**/*.test.{ts,tsx}'],
   },
   server: {
     proxy: {

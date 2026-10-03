@@ -1,10 +1,13 @@
 import { Button, Card, DataTable } from '@ucanvas/ui';
 import type { DataTableColumn } from '@ucanvas/ui';
 import type { User } from '@ucanvas/shared';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '@/features/auth';
 import { useUsers } from '@/features/users';
+import { ROUTES } from '@/lib/router';
 
 const columns: DataTableColumn<User>[] = [
-  { key: 'name', header: 'Name', render: (user) => user.name },
+  { key: 'name', header: 'Name', render: (user) => user.name ?? '—' },
   { key: 'email', header: 'Email', render: (user) => user.email },
   {
     key: 'createdAt',
@@ -15,9 +18,25 @@ const columns: DataTableColumn<User>[] = [
 
 export function UsersPage() {
   const { data, isLoading, isError, error, refetch } = useUsers();
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+
+  async function handleLogout() {
+    await logout();
+    navigate(ROUTES.login, { replace: true });
+  }
 
   return (
     <main className="glass-bg home-page">
+      <nav className="users-page__account" aria-label="Cuenta">
+        <span>{user?.email}</span>
+        <Link className="auth-link" to={ROUTES.accountSecurity}>
+          Seguridad de la cuenta
+        </Link>
+        <Button variant="ghost" size="sm" onClick={handleLogout}>
+          Cerrar sesión
+        </Button>
+      </nav>
       <Card className="users-page__card">
         <Card.Header>Users</Card.Header>
         <Card.Body>

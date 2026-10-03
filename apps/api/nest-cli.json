@@ -4,6 +4,12 @@
   "sourceRoot": "src",
   "compilerOptions": {
     "deleteOutDir": true,
-    "plugins": ["@nestjs/swagger/plugin"]
+    "plugins": ["@nestjs/swagger/plugin"],
+    "assets": [
+      {
+        "include": "modules/auth/infrastructure/passwords/common-passwords.txt",
+        "outDir": "dist"
+      }
+    ]
   }
 }

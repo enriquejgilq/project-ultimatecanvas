@@ -4,7 +4,8 @@ import { AuthGuard } from '@nestjs/passport';
 import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
 
 /**
- * Placeholder guard: relies on JwtStrategy (see common/strategies) once auth is fully wired.
+ * Global guard (registered as APP_GUARD): every route requires a valid access token whose
+ * session is still active (see modules/auth/infrastructure/jwt.strategy.ts).
  * Routes marked with @Public() bypass it entirely.
  */
 @Injectable()

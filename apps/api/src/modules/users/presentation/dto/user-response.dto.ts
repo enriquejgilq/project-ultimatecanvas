@@ -9,8 +9,8 @@ export class UserResponseDto implements UserContract {
   @ApiProperty()
   email!: string;
 
-  @ApiProperty()
-  name!: string;
+  @ApiProperty({ type: String, nullable: true })
+  name!: string | null;
 
   @ApiProperty()
   createdAt!: string;

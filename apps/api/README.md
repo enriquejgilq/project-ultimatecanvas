@@ -59,13 +59,32 @@ Usando `orders` como ejemplo:
 7. **Tests**: por cada use case, un `.spec.ts` que instancia `new XUseCase(new InMemoryOrdersRepository())` — sin `TestingModule`, sin mocks de framework. Añade también un `.spec.ts` para la entidad de dominio si tiene invariantes no triviales.
 8. **Verifica**: `pnpm --filter @ucanvas/api typecheck && pnpm --filter @ucanvas/api lint && pnpm --filter @ucanvas/api test`, luego levanta `pnpm --filter @ucanvas/api dev` y confirma en `/docs` que el módulo aparece documentado.
 
-## Migrar de in-memory a una base real
+## Base de datos (Prisma + PostgreSQL)
 
-Cuando `DatabaseModule` tenga un cliente Prisma/TypeORM configurado:
+`DatabaseModule` expone un `PrismaService` global (conecta en `onModuleInit`, desconecta en `onModuleDestroy`). `modules/users` usa `PrismaUsersRepository` como implementación de `UsersRepositoryPort` — el mismo puerto que `InMemoryUsersRepository`, que se sigue usando en los tests unitarios de los use cases (instanciada directamente, sin pasar por Nest DI).
 
-1. Implementa `Prisma<Dominio>Repository implements <Dominio>RepositoryPort`, mapeando fila ↔ entidad de dominio dentro del propio adaptador (el dominio nunca ve tipos de Prisma).
-2. Cambia una única línea en `<dominio>.module.ts`: `{ provide: X_REPOSITORY, useClass: Prisma<Dominio>Repository }`.
-3. Nada en `application/`, `domain/` o `presentation/` necesita tocarse.
+Requiere una instancia de PostgreSQL accesible vía `DATABASE_URL` (ver `.env.example`). En local, con Postgres nativo (Homebrew) ya corriendo:
+
+```bash
+createdb ultimatecanvas   # una sola vez, si la base no existe
+```
+
+Comandos (desde `apps/api`, o con `pnpm --filter @ucanvas/api <script>` desde la raíz):
+
+- `pnpm db:migrate` — crea y aplica una migración a partir de `prisma/schema.prisma` (dev).
+- `pnpm db:migrate:deploy` — aplica migraciones pendientes sin generar una nueva (CI/producción).
+- `pnpm db:generate` — regenera el Prisma Client tras cambiar el schema.
+- `pnpm db:seed` — siembra los 3 usuarios de ejemplo (`prisma/seed.ts`, misma data que `createDemoUsers()`).
+- `pnpm db:studio` — abre Prisma Studio para inspeccionar la base.
+
+## Migrar de in-memory a una base real (plantilla para módulos nuevos)
+
+Cuando un módulo nuevo pase de `InMemory<Dominio>Repository` a Postgres (siguiendo el patrón ya aplicado en `users`):
+
+1. Añade el modelo a `prisma/schema.prisma` y corre `pnpm db:migrate`.
+2. Implementa `Prisma<Dominio>Repository implements <Dominio>RepositoryPort` en `infrastructure/`, mapeando fila ↔ entidad de dominio dentro del propio adaptador (el dominio nunca ve tipos de Prisma), inyectando `PrismaService`.
+3. Cambia una única línea en `<dominio>.module.ts`: `{ provide: X_REPOSITORY, useClass: Prisma<Dominio>Repository }`.
+4. Nada en `application/`, `domain/` o `presentation/` necesita tocarse.
 
 ## Comandos
 

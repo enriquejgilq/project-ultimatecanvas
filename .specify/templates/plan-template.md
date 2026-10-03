@@ -42,6 +42,20 @@ _GATE: Must pass before Phase 0 research. Re-check after Phase 1 design._
 
 [Gates determined based on constitution file]
 
+### Guías de arquitectura aplicables
+
+_Obligatorio (Constitución, principio I). Marca las guías de `docs/arquitectura/` que aplican a esta
+fase y explica cómo se cumplen sus reglas. Una violación sin justificar en "Complexity Tracking"
+bloquea la fase._
+
+| Guía                                               | ¿Aplica? | Reglas relevantes y cómo se cumplen                    |
+| -------------------------------------------------- | -------- | ------------------------------------------------------ |
+| `backend.md` (si toca `apps/api`)                  | [Sí/No]  | [capas, puertos, errores, workspaceId, permisos…]      |
+| `contrato-api.md` (si toca api, web o shared)      | [Sí/No]  | [forma de respuesta, códigos de error, URLs…]          |
+| `frontend.md` (si toca `apps/web` o `packages/ui`) | [Sí/No]  | [ubicación de componentes, contenedor + vista, hooks…] |
+| `estados-ui.md` (si hay UI con datos o acciones)   | [Sí/No]  | [estados obligatorios, historias, pruebas…]            |
+| `checklist-feature.md`                             | Sí       | [se revisa antes de `/speckit-converge`]               |
+
 ## Project Structure
 
 ### Documentation (this feature)
